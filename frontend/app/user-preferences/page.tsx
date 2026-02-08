@@ -15,7 +15,7 @@ export default function UserPreferencesPage() {
 
     const [firebase_id, setFirebaseId] = useState<string>("")
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-
+    console.log(API_BASE_URL)
     // ==================== AUTH ====================
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {

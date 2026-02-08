@@ -47,7 +47,7 @@ class YOLODetector:
                 logging.warning("MongoDB integration not available. Install pymongo.")
             else:
                 try:
-                    self.db = ParkingDB(connection_string=mongo_uri or "mongodb://localhost:27017/")
+                    self.db = ParkingDB(connection_string=mongo_uri )
                 except Exception as e:
                     logging.error(f"Failed to connect to MongoDB: {e}")
                     self.db = None
