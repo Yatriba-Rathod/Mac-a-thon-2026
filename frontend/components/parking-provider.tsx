@@ -19,11 +19,11 @@ function InnerProviderEffects() {
 
 export function ParkingProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(parkingReducer, initialState);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   // Load settings from localStorage on mount and fetch lot from backend
   useEffect(() => {
     let settings: ParkingSettings = {
-      restBaseUrl: "http://localhost:8000",
+      restBaseUrl: `${API_BASE_URL} `,
       wsUrl: "",
     };
     try {
@@ -62,7 +62,7 @@ export function ParkingProvider({ children }: { children: React.ReactNode }) {
   // Fetch and poll occupancy data
   useEffect(() => {
     const lotId = "lot1";
-    const baseUrl = "http://localhost:8000";
+    const baseUrl = `${API_BASE_URL}`;
 
     const fetchOccupancy = async () => {
       try {

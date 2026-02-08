@@ -28,7 +28,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [formError, setFormError] = useState("")
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const isSignUp = mode === "sign-up"
 
   // Redirect if already logged in
@@ -85,9 +85,9 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       // Get Firebase UID
       const firebaseId = userCredential.user.uid
-
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
       // Send user info to FastAPI backend
-      const response = await fetch("http://localhost:8000/user/sync", {
+      const response = await fetch(`${API_BASE_URL}/user/sync`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
