@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Body, HTTPException, status, Path
 from controller.controller import (
     answer_questions,
     edit_questions,
@@ -8,7 +8,10 @@ from controller.controller import (
     get_user_with_preferences,
     delete_user_complete,
     get_all_users,
-    default_message
+    default_message,
+    get_lot_by_id,
+    get_all_lots,
+    get_occupancy_by_lot_id
 )
 from database.database import check_db_connection
 from model.model import UserPreferences
@@ -169,5 +172,86 @@ def list_all_users():
     GET - Get all users with their preference answers (admin endpoint)
     """
     return get_all_users()
+
+
+# ==================== PARKING LOT ENDPOINTS ====================
+
+@router.get("/lots/{lot_id}", status_code=status.HTTP_200_OK)
+def get_lot(lot_id: str = Path(..., description="Parking lot ID")):
+    """
+    GET - Fetch parking lot definition by lot_id
+    
+    Example: /lots/lot1
+    
+    Returns:
+    {
+        "status": "success",
+        "lot": {
+            "lot_id": "lot1",
+            "name": "Mac Parking",
+            "spots": [...],
+            "created_at": "2026-02-08T13:11:34.025+00:00",
+            ...
+        }
+    }
+    """
+    result = get_lot_by_id(lot_id)
+    
+    if result.get("status") == "error":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=result.get("message")
+        )
+    
+    return result
+
+
+@router.get("/lots", status_code=status.HTTP_200_OK)
+def list_all_lots():
+    """
+    GET - Get all parking lots (admin endpoint)
+    
+    Returns:
+    {
+        "status": "success",
+        "count": 1,
+        "lots": [...]
+    }
+    """
+    return get_all_lots()
+
+
+@router.get("/occupancy/{lot_id}", status_code=status.HTTP_200_OK)
+def get_occupancy(lot_id: str = Path(..., description="Parking lot ID")):
+    """
+    GET - Fetch occupancy states for all spots in a lot
+    
+    Example: /occupancy/lot1
+    
+    Returns:
+    {
+        "status": "success",
+        "count": 19,
+        "occupancies": [
+            {
+                "spot_id": "0",
+                "lot_id": "lot1",
+                "occupied": false,
+                "last_updated": "2026-02-08T12:29:09.307+00:00",
+                "video_source": "Mac-a-thon.mp4"
+            },
+            ...
+        ]
+    }
+    """
+    result = get_occupancy_by_lot_id(lot_id)
+    
+    if result.get("status") == "error":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=result.get("message")
+        )
+    
+    return result
 
 

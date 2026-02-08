@@ -16,6 +16,36 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 }
 
 /**
+ * Fetch parking lot by lot_id from backend
+ */
+export async function fetchLotById(
+  baseUrl: string,
+  lotId: string
+): Promise<LotDefinition> {
+  const res = await fetch(`${baseUrl}/lots/${lotId}`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch parking lot: ${res.statusText}`)
+  }
+  const data = await res.json()
+  return data.lot
+}
+
+/**
+ * Fetch occupancy data for a specific lot_id from backend
+ */
+export async function fetchOccupancyByLotId(
+  baseUrl: string,
+  lotId: string
+): Promise<{ spot_id: string; occupied: boolean; last_updated: string }[]> {
+  const res = await fetch(`${baseUrl}/occupancy/${lotId}`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch occupancy data: ${res.statusText}`)
+  }
+  const data = await res.json()
+  return data.occupancies
+}
+
+/**
  * Fetch current parking lot data
  */
 export async function fetchCurrentLot(baseUrl: string): Promise<LotDefinition[]> {

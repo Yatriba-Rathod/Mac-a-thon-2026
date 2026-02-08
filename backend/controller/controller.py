@@ -1,6 +1,7 @@
-from database.database import users_collection, preferences_collection
-from model.model import User, UserPreferences
+from database.database import users_collection, preferences_collection, lot_collection, occupancy_collection
+from model.model import User, UserPreferences, LotDefinition
 from datetime import datetime
+from bson import ObjectId
 
 #Default Message
 def default_message():
@@ -234,4 +235,70 @@ def get_all_users():
         "status": "success",
         "count": len(users),
         "users": users
+    }
+
+
+# ==================== PARKING LOT OPERATIONS ====================
+
+def get_lot_by_id(lot_id: str):
+    """
+    Get parking lot definition by lot_id
+    """
+    lot = lot_collection.find_one({"lot_id": lot_id})
+    
+    if not lot:
+        return {
+            "status": "error",
+            "message": f"Lot with id '{lot_id}' not found"
+        }
+    
+    # Convert ObjectId to string for JSON serialization
+    if "_id" in lot:
+        lot["_id"] = str(lot["_id"])
+    
+    return {
+        "status": "success",
+        "lot": lot
+    }
+
+
+def get_all_lots():
+    """
+    Get all parking lots (admin endpoint)
+    """
+    lots = list(lot_collection.find({}))
+    
+    # Convert ObjectId to string for each lot
+    for lot in lots:
+        if "_id" in lot:
+            lot["_id"] = str(lot["_id"])
+    
+    return {
+        "status": "success",
+        "count": len(lots),
+        "lots": lots
+    }
+
+
+def get_occupancy_by_lot_id(lot_id: str):
+    """
+    Get all occupancy states for a specific lot_id
+    """
+    occupancies = list(occupancy_collection.find({"lot_id": lot_id}))
+    
+    if not occupancies:
+        return {
+            "status": "error",
+            "message": f"No occupancy data found for lot '{lot_id}'"
+        }
+    
+    # Convert ObjectId to string for each entry
+    for occ in occupancies:
+        if "_id" in occ:
+            occ["_id"] = str(occ["_id"])
+    
+    return {
+        "status": "success",
+        "count": len(occupancies),
+        "occupancies": occupancies
     }

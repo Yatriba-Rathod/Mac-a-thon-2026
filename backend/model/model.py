@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 
 
@@ -34,14 +34,34 @@ class UserPreferences(BaseModel):
     created_at: Optional[datetime] = Field(None, description="Preference creation timestamp")
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
 
-# class LotDefinition(BaseModel):
-#     lot_id: str
-#     name: str
-#     spots: [{spot_id: str, type: str, polygon: [coordinate]*4 } ]
-# }
+# ==================== PARKING LOT MODELS ====================
 
-# coordinate = {x: float, y: float}
+class Coordinate(BaseModel):
+    """Coordinate point for spot polygons (normalized 0-1)"""
+    x: float = Field(..., ge=0, le=1, description="X coordinate (0-1)")
+    y: float = Field(..., ge=0, le=1, description="Y coordinate (0-1)")
 
-# SpotStates = {
-#     lot_id: str
-#     states: [array of Map < spot_id, {occupied: bool, last_updated: timestamp} ]
+
+class Spot(BaseModel):
+    """Individual parking spot definition"""
+    spot_id: str = Field(..., description="Unique spot identifier")
+    type: str = Field(..., description="Spot type: standard, accessible, ev")
+    polygon: List[Coordinate] = Field(..., min_items=3, description="Polygon coordinates")
+
+
+class LotDefinition(BaseModel):
+    """Complete parking lot definition"""
+    lot_id: str = Field(..., description="Unique lot identifier")
+    name: str = Field(..., description="Parking lot name")
+    spots: List[Spot] = Field(..., description="Array of parking spots")
+    image_width: Optional[int] = Field(None, description="Original image width")
+    image_height: Optional[int] = Field(None, description="Original image height")
+    created_at: Optional[datetime] = Field(None, description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+
+
+class SpotState(BaseModel):
+    """Individual spot occupancy state"""
+    spot_id: str = Field(..., description="Spot identifier")
+    occupied: bool = Field(..., description="Occupancy status")
+    last_updated: datetime = Field(..., description="Last update timestamp")
