@@ -18,6 +18,32 @@ router = APIRouter()
 @router.get('/')
 def default_msg():
     return default_message()
+
+# ==================== USER SYNC ENDPOINT ====================
+
+@router.post("/user/sync", status_code=status.HTTP_201_CREATED)
+def sync_user(payload: dict = Body(...)):
+    """
+    POST - Save or update user info in MongoDB immediately after sign-up/sign-in
+
+    Body:
+    {
+        "firebase_id": "user_123",
+        "full_name": "Sahil Gupta",
+        "email": "sahil@example.com"
+    }
+    """
+    from controller.controller import create_or_update_user
+
+    result = create_or_update_user(payload)
+
+    if result.get("status") == "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result.get("message")
+        )
+
+    return result
 # ==================== SURVEY/QUESTIONS ENDPOINTS ====================
 
 @router.post("/questions/answer", status_code=status.HTTP_201_CREATED)

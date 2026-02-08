@@ -12,7 +12,7 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
 } from "firebase/auth"
-import { auth } from "../lib/firebase";
+import { auth } from "../lib/firebase"
 
 interface AuthFormProps {
   mode: "sign-in" | "sign-up"
@@ -76,13 +76,38 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     setLoading(true)
     try {
+      let userCredential
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password)
+        userCredential = await createUserWithEmailAndPassword(auth, email, password)
       } else {
-        await signInWithEmailAndPassword(auth, email, password)
+        userCredential = await signInWithEmailAndPassword(auth, email, password)
       }
 
-      router.replace("/")
+      // Get Firebase UID
+      const firebaseId = userCredential.user.uid
+
+      // Send user info to FastAPI backend
+      const response = await fetch("http://localhost:8000/user/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firebase_id: firebaseId,
+          full_name: isSignUp ? name : userCredential.user.displayName || "",
+          email: email,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to sync user")
+      }
+
+      console.log("User synced successfully:", data)
+
+      router.replace("/") // redirect after successful login/sign-up
     } catch (err: any) {
       setFormError(err.message || "Authentication failed")
     } finally {

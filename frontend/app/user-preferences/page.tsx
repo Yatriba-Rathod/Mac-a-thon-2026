@@ -11,22 +11,71 @@ export default function UserPreferencesPage() {
     const [q4, setQ4] = useState<string>("")
     const [q5, setQ5] = useState<string[]>([])
 
-    const handleSubmit = () => {
-        const surveyData = { q1, q2, q3, q4, q5 }
-        console.log("Survey submitted:", surveyData)
-        // TODO: send data to backend or save to store
-        alert("Thank you for completing the survey!")
-        // Optional: redirect to dashboard after completion
-        // router.push("/dashboard")
+    const firebase_id = "user_123" // replace with dynamic Firebase ID if available
+
+    const surveyData = { firebase_id, q1, q2, q3, q4, q5 }
+
+    // ==================== API FUNCTIONS ====================
+
+    const handleSubmit = async () => {
+        try {
+            const res = await fetch("/api/questions/answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(surveyData),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.detail || "Error submitting survey")
+            alert("Survey submitted successfully!")
+        } catch (err: any) {
+            alert(err.message)
+        }
+    }
+
+    const handleEdit = async () => {
+        try {
+            const res = await fetch(`/api/questions/${firebase_id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ q1, q2, q3, q4, q5 }), // send only fields to update
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.detail || "Error editing survey")
+            alert("Survey updated successfully!")
+        } catch (err: any) {
+            alert(err.message)
+        }
+    }
+
+    const handleDelete = async () => {
+        const confirmed = confirm("Are you sure you want to delete your survey answers?")
+        if (!confirmed) return
+
+        try {
+            const res = await fetch(`/api/questions/${firebase_id}`, {
+                method: "DELETE",
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.detail || "Error deleting survey")
+            alert("Survey deleted successfully!")
+            // Reset form after deletion
+            setQ1("")
+            setQ2("")
+            setQ3("")
+            setQ4("")
+            setQ5([])
+        } catch (err: any) {
+            alert(err.message)
+        }
     }
 
     const toggleQ5 = (option: string) => {
         setQ5((prev) =>
-            prev.includes(option)
-                ? prev.filter((o) => o !== option)
-                : [...prev, option]
+            prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option]
         )
     }
+
+    // ==================== JSX ====================
 
     return (
         <AppShell>
@@ -150,9 +199,18 @@ export default function UserPreferencesPage() {
                     )}
                 </div>
 
-                <Button onClick={handleSubmit} className="gap-1.5">
-                    Submit Preferences
-                </Button>
+                {/* Buttons */}
+                <div className="flex gap-4 mt-4">
+                    <Button onClick={handleSubmit} className="gap-1.5">
+                        Submit Preferences
+                    </Button>
+                    <Button onClick={handleEdit} variant="secondary" className="gap-1.5">
+                        Edit Preferences
+                    </Button>
+                    <Button onClick={handleDelete} variant="destructive" className="gap-1.5">
+                        Delete Preferences
+                    </Button>
+                </div>
             </div>
         </AppShell>
     )

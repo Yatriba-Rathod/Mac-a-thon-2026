@@ -6,6 +6,7 @@ from datetime import datetime
 def default_message():
     return "Welcome Mac-a-Park backend" 
 
+
 # ==================== USER OPERATIONS ====================
 
 def create_or_update_user(data: dict):
