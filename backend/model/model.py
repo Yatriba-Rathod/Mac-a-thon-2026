@@ -33,3 +33,15 @@ class UserPreferences(BaseModel):
     # Timestamps
     created_at: Optional[datetime] = Field(None, description="Preference creation timestamp")
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+
+# class LotDefinition(BaseModel):
+#     lot_id: str
+#     name: str
+#     spots: [{spot_id: str, type: str, polygon: [coordinate]*4 } ]
+# }
+
+# coordinate = {x: float, y: float}
+
+# SpotStates = {
+#     lot_id: str
+#     states: [array of Map < spot_id, {occupied: bool, last_updated: timestamp} ]
