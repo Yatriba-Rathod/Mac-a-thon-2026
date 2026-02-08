@@ -142,7 +142,7 @@ function MovingDot({ lineY }: { lineY: number }) {
   useEffect(() => {
     let id: number;
     let lastTime: number | null = null;
-    const speedPerSecond = 100; // pixels per second
+    const speedPerSecond = 30; // pixels per second
     const targetX = SVG_W * 0.7; // stop at 70% of the line
 
     const move = (time: number) => {

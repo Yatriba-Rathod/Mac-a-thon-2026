@@ -102,11 +102,10 @@ export function DashboardSidebar({
               key={opt.value}
               type="button"
               onClick={() => onFilterChange(opt.value)}
-              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                guidanceFilter === opt.value
-                  ? "bg-[hsl(var(--spot-guidance))]/15 text-[hsl(var(--spot-guidance))] border border-[hsl(var(--spot-guidance))]/30"
-                  : "border border-border text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${guidanceFilter === opt.value
+                ? "bg-[hsl(var(--spot-guidance))]/15 text-[hsl(var(--spot-guidance))] border border-[hsl(var(--spot-guidance))]/30"
+                : "border border-border text-muted-foreground hover:text-foreground"
+                }`}
             >
               {opt.icon}
               {opt.label}
@@ -201,7 +200,7 @@ export function DashboardSidebar({
             <p className="text-center text-xs text-muted-foreground">
               {!state.lot
                 ? "No lot loaded."
-                : "No matching empty spots available."}
+                : ""}
             </p>
           </div>
         )}
