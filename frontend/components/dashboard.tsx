@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { ParkingLotView } from "@/components/parking-lot-view"
-import { SpotDrawer } from "@/components/spot-drawer"
 import { useGuidance, type GuidanceFilter } from "@/hooks/use-guidance"
 import { useParkingStore } from "@/lib/store"
 

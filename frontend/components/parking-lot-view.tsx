@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useParkingStore } from "@/lib/store";
 import type { SpotDefinition, Point } from "@/lib/types";
 
@@ -29,13 +29,11 @@ function SpotPolygon({
   isRecommended: boolean;
   onClick: () => void;
 }) {
-  // Calculate center of polygon
   const centerX =
     spot.polygon.reduce((sum, p) => sum + p.x * SVG_W, 0) / spot.polygon.length;
   const centerY =
     spot.polygon.reduce((sum, p) => sum + p.y * SVG_H, 0) / spot.polygon.length;
 
-  // Fixed square size for all spots
   const squareSize = 60;
 
   const fillColor = isRecommended
@@ -62,7 +60,8 @@ function SpotPolygon({
       onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label={`Spot ${spot.spot_id}: ${isRecommended ? "Recommended" : occupied ? "Occupied" : "Empty"}`}
+      aria-label={`Spot ${spot.spot_id}: ${isRecommended ? "Recommended" : occupied ? "Occupied" : "Empty"
+        }`}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -70,7 +69,6 @@ function SpotPolygon({
         }
       }}
     >
-      {/* Glow filter for recommended spot */}
       {isRecommended && (
         <rect
           x={centerX - squareSize / 2 - 4}
@@ -95,7 +93,6 @@ function SpotPolygon({
         strokeWidth={isRecommended ? 3 : 2}
         className="transition-all duration-300"
       />
-      {/* Car icon for occupied spots */}
       {occupied && !isRecommended && (
         <rect
           x={centerX - 16}
@@ -107,7 +104,6 @@ function SpotPolygon({
           className="transition-all duration-300"
         />
       )}
-      {/* Type badge for special spots */}
       {spot.type && spot.type !== "standard" && (
         <text
           x={centerX}
@@ -139,6 +135,38 @@ function SpotPolygon({
   );
 }
 
+// -------------------- BLUE DOT ANIMATION --------------------
+function MovingDot({ lineY }: { lineY: number }) {
+  const [x, setX] = useState(0);
+
+  useEffect(() => {
+    let id: number;
+    let lastTime: number | null = null;
+    const speedPerSecond = 100; // pixels per second
+    const targetX = SVG_W * 0.7; // stop at 70% of the line
+
+    const move = (time: number) => {
+      if (lastTime !== null) {
+        const delta = (time - lastTime) / 1000; // seconds elapsed
+        setX((prev) => {
+          const next = prev + speedPerSecond * delta;
+          return next >= targetX ? targetX : next;
+        });
+      }
+      lastTime = time;
+      if (x < targetX) {
+        id = requestAnimationFrame(move);
+      }
+    };
+
+    id = requestAnimationFrame(move);
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return <circle cx={x} cy={lineY} r={10} fill="blue" />;
+}
+
+// -------------------- PARKING LOT VIEW --------------------
 export function ParkingLotView({
   onSpotClick,
   recommendedSpotId,
@@ -146,10 +174,8 @@ export function ParkingLotView({
   entrancePoint,
 }: ParkingLotViewProps) {
   const { state } = useParkingStore();
-
   const lot = state.lot;
   const spotStates = state.spotStates;
-
   const spots = useMemo(() => lot?.spots ?? [], [lot]);
 
   if (!lot) {
@@ -167,14 +193,9 @@ export function ParkingLotView({
     );
   }
 
-  const pathPolyline = pathPoints
-    ?.map((p) => {
-      const s = toSvg(p);
-      return `${s.x},${s.y}`;
-    })
-    .join(" ");
-
-  const entranceSvg = entrancePoint ? toSvg(entrancePoint) : null;
+  // -------------------- LINE SETTINGS --------------------
+  const rotation = -6;
+  const yIntercept = SVG_H / 2.4;
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg border border-border bg-[hsl(220,20%,5%)]">
@@ -184,12 +205,7 @@ export function ParkingLotView({
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
-          <pattern
-            id="grid"
-            width="50"
-            height="50"
-            patternUnits="userSpaceOnUse"
-          >
+          <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
             <path
               d="M 50 0 L 0 0 0 50"
               fill="none"
@@ -197,38 +213,28 @@ export function ParkingLotView({
               strokeWidth="0.5"
             />
           </pattern>
-          <marker
-            id="arrowhead"
-            markerWidth="8"
-            markerHeight="6"
-            refX="8"
-            refY="3"
-            orient="auto"
-          >
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill="hsl(210 90% 56%)" />
           </marker>
         </defs>
+
         <rect width={SVG_W} height={SVG_H} fill="url(#grid)" />
 
-        {/* Adjustable horizontal line - modify rotation and yIntercept values */}
-        {(() => {
-          const rotation = -6; // Change this value to rotate the line (in degrees)
-          const yIntercept = SVG_H / 2.4; // Change this to move the line up/down (0 = top, SVG_H = bottom)
-          
-          return (
-            <line
-              x1="0"
-              y1={yIntercept}
-              x2={SVG_W}
-              y2={yIntercept}
-              stroke="hsl(45 90% 55%)"
-              strokeWidth="2"
-              strokeDasharray="10 5"
-              transform={`rotate(${rotation} ${SVG_W / 2} ${yIntercept})`}
-              className="transition-all duration-300"
-            />
-          );
-        })()}
+        {/* The moving blue dot */}
+        <MovingDot lineY={yIntercept} />
+
+        {/* Horizontal line */}
+        <line
+          x1="0"
+          y1={yIntercept}
+          x2={SVG_W}
+          y2={yIntercept}
+          stroke="hsl(45 90% 55%)"
+          strokeWidth="2"
+          strokeDasharray="10 5"
+          transform={`rotate(${rotation} ${SVG_W / 2} ${yIntercept})`}
+          className="transition-all duration-300"
+        />
 
         {/* Spots */}
         {spots.map((spot) => {
