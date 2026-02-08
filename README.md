@@ -35,7 +35,4 @@ Mac-A-Park **analyzes CCTV video feeds** using OpenCV and a deep learning object
 
 ---
 
-## System Flow
-
-**Flow:**
 
