@@ -1,34 +1,24 @@
 "use client"
 
-import React from "react"
-
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Car, Loader2, AlertCircle } from "lucide-react"
+
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+} from "firebase/auth"
+import { auth } from "../lib/firebase";
 
 interface AuthFormProps {
   mode: "sign-in" | "sign-up"
 }
 
-function getBaseUrlFromSettings(): string {
-  try {
-    const saved = localStorage.getItem("parking-settings")
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      return parsed.restBaseUrl || ""
-    }
-  } catch {
-    // ignore
-  }
-  return ""
-}
-
 export function AuthForm({ mode }: AuthFormProps) {
-  const { state, signIn, signUp } = useAuth()
   const router = useRouter()
 
   const [name, setName] = useState("")
@@ -36,13 +26,18 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
+  const [formError, setFormError] = useState("")
 
-  // If already authenticated, redirect to dashboard
+  const isSignUp = mode === "sign-up"
+
+  // Redirect if already logged in
   useEffect(() => {
-    if (state.status === "authenticated") {
-      router.replace("/")
-    }
-  }, [state.status, router])
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace("/")
+    })
+    return () => unsub()
+  }, [router])
 
   const validate = (): boolean => {
     const errors: Record<string, string> = {}
@@ -59,7 +54,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       errors.password = "Password must be at least 8 characters"
     }
 
-    if (mode === "sign-up") {
+    if (isSignUp) {
       if (!name.trim()) {
         errors.name = "Name is required"
       }
@@ -76,28 +71,24 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFormError("")
     if (!validate()) return
 
-    const url = getBaseUrlFromSettings()
-    if (!url) {
-      setValidationErrors({ form: "Configure the Backend URL in Settings first." })
-      return
-    }
+    setLoading(true)
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password)
+      } else {
+        await signInWithEmailAndPassword(auth, email, password)
+      }
 
-    let success = false
-    if (mode === "sign-in") {
-      success = await signIn(email, password, url)
-    } else {
-      success = await signUp(name, email, password, url)
-    }
-
-    if (success) {
       router.replace("/")
+    } catch (err: any) {
+      setFormError(err.message || "Authentication failed")
+    } finally {
+      setLoading(false)
     }
   }
-
-  const isLoading = state.status === "loading"
-  const isSignUp = mode === "sign-up"
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -107,18 +98,17 @@ export function AuthForm({ mode }: AuthFormProps) {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Car className="h-5 w-5 text-primary-foreground" />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Mac-A-Park</h1>
+          <h1 className="text-lg font-semibold">Mac-A-Park</h1>
           <p className="text-sm text-muted-foreground">
             {isSignUp ? "Create your account" : "Sign in to your account"}
           </p>
         </div>
 
-        {/* Error banner */}
-        {(state.error || validationErrors.form) && (
+        {(formError || validationErrors.form) && (
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
-            <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+            <AlertCircle className="h-4 w-4 text-destructive" />
             <p className="text-xs text-destructive">
-              {state.error || validationErrors.form}
+              {formError || validationErrors.form}
             </p>
           </div>
         )}
@@ -126,88 +116,63 @@ export function AuthForm({ mode }: AuthFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
             <div>
-              <label
-                htmlFor="name"
-                className="mb-1.5 block text-xs font-medium text-muted-foreground"
-              >
-                Name
-              </label>
+              <label className="mb-1.5 block text-xs font-medium">Name</label>
               <Input
-                id="name"
-                type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="bg-muted text-sm text-foreground"
-                disabled={isLoading}
-                autoComplete="name"
+                disabled={loading}
               />
               {validationErrors.name && (
-                <p className="mt-1 text-xs text-destructive">{validationErrors.name}</p>
+                <p className="mt-1 text-xs text-destructive">
+                  {validationErrors.name}
+                </p>
               )}
             </div>
           )}
 
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1.5 block text-xs font-medium text-muted-foreground"
-            >
-              Email
-            </label>
+            <label className="mb-1.5 block text-xs font-medium">Email</label>
             <Input
-              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="bg-muted text-sm text-foreground"
-              disabled={isLoading}
-              autoComplete="email"
+              disabled={loading}
             />
             {validationErrors.email && (
-              <p className="mt-1 text-xs text-destructive">{validationErrors.email}</p>
+              <p className="mt-1 text-xs text-destructive">
+                {validationErrors.email}
+              </p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1.5 block text-xs font-medium text-muted-foreground"
-            >
-              Password
-            </label>
+            <label className="mb-1.5 block text-xs font-medium">Password</label>
             <Input
-              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min 8 characters"
-              className="bg-muted text-sm text-foreground"
-              disabled={isLoading}
-              autoComplete={isSignUp ? "new-password" : "current-password"}
+              disabled={loading}
             />
             {validationErrors.password && (
-              <p className="mt-1 text-xs text-destructive">{validationErrors.password}</p>
+              <p className="mt-1 text-xs text-destructive">
+                {validationErrors.password}
+              </p>
             )}
           </div>
 
           {isSignUp && (
             <div>
-              <label
-                htmlFor="confirm-password"
-                className="mb-1.5 block text-xs font-medium text-muted-foreground"
-              >
+              <label className="mb-1.5 block text-xs font-medium">
                 Confirm Password
               </label>
               <Input
-                id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter your password"
-                className="bg-muted text-sm text-foreground"
-                disabled={isLoading}
+                disabled={loading}
               />
               {validationErrors.confirmPassword && (
                 <p className="mt-1 text-xs text-destructive">
@@ -217,9 +182,9 @@ export function AuthForm({ mode }: AuthFormProps) {
             </div>
           )}
 
-          <Button type="submit" className="w-full gap-1.5" disabled={isLoading}>
-            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isLoading
+          <Button type="submit" className="w-full gap-1.5" disabled={loading}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loading
               ? isSignUp
                 ? "Creating account..."
                 : "Signing in..."
@@ -232,21 +197,15 @@ export function AuthForm({ mode }: AuthFormProps) {
         <p className="mt-6 text-center text-xs text-muted-foreground">
           {isSignUp ? (
             <>
-              {"Already have an account? "}
-              <Link
-                href="/auth/sign-in"
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
+              Already have an account?{" "}
+              <Link href="/auth/sign-in" className="text-primary hover:underline">
                 Sign in
               </Link>
             </>
           ) : (
             <>
-              {"Don't have an account? "}
-              <Link
-                href="/auth/sign-up"
-                className="font-medium text-primary underline-offset-4 hover:underline"
-              >
+              Don&apos;t have an account?{" "}
+              <Link href="/auth/sign-up" className="text-primary hover:underline">
                 Sign up
               </Link>
             </>

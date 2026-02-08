@@ -10,13 +10,21 @@ import { useParkingStore } from "@/lib/store"
 export function Dashboard() {
   const [selectedSpot, setSelectedSpot] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [guidanceFilter, setGuidanceFilter] = useState<GuidanceFilter>("best")
-  const [selectedEntranceId, setSelectedEntranceId] = useState<string | null>(null)
+  const [guidanceFilter, setGuidanceFilter] =
+    useState<GuidanceFilter>("best")
+  const [selectedEntranceId, setSelectedEntranceId] =
+    useState<string | null>(null)
 
+  // ✅ READ-ONLY STORE ACCESS
   const { state } = useParkingStore()
 
-  const guidanceResult = useGuidance(guidanceFilter, selectedEntranceId)
-  const recommendedSpotId = guidanceResult.recommendedSpots[0]?.spot.spot_id ?? null
+  const guidanceResult = useGuidance(
+    guidanceFilter,
+    selectedEntranceId
+  )
+
+  const recommendedSpotId =
+    guidanceResult.recommendedSpots[0]?.spot.spot_id ?? null
 
   const handleSpotClick = (spotId: string) => {
     setSelectedSpot(spotId)
@@ -31,7 +39,10 @@ export function Dashboard() {
   }, [recommendedSpotId])
 
   const entrancePoint = guidanceResult.entrance
-    ? { x: guidanceResult.entrance.x, y: guidanceResult.entrance.y }
+    ? {
+      x: guidanceResult.entrance.x,
+      y: guidanceResult.entrance.y,
+    }
     : null
 
   return (
@@ -39,11 +50,15 @@ export function Dashboard() {
       <DashboardSidebar
         guidanceFilter={guidanceFilter}
         onFilterChange={setGuidanceFilter}
-        selectedEntranceId={selectedEntranceId ?? (state.lot?.entrances?.[0]?.id ?? null)}
+        selectedEntranceId={
+          selectedEntranceId ??
+          (state.lot?.entrances?.[0]?.id ?? null)
+        }
         onEntranceChange={setSelectedEntranceId}
         guidanceResult={guidanceResult}
         onCenterOnSpot={handleCenterOnSpot}
       />
+
       <main className="flex flex-1 flex-col overflow-hidden p-4">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-foreground">
@@ -53,6 +68,7 @@ export function Dashboard() {
             Click a spot for details
           </p>
         </div>
+
         <div className="flex-1 overflow-hidden">
           <ParkingLotView
             onSpotClick={handleSpotClick}
@@ -62,6 +78,7 @@ export function Dashboard() {
           />
         </div>
       </main>
+
       <SpotDrawer
         spotId={selectedSpot}
         open={drawerOpen}

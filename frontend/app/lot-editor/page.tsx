@@ -1,12 +1,12 @@
 "use client"
 
 import { AppShell } from "@/components/app-shell"
-import { LotEditor } from "@/components/lot-editor"
+import UserPreferencesPage from "@/components/UserPreferencesPage"
 
-export default function LotEditorPage() {
+export default function UserPreferenceEditPage() {
   return (
     <AppShell>
-      <LotEditor />
+      <UserPreferencesPage />
     </AppShell>
   )
 }

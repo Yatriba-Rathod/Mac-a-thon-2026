@@ -1,38 +1,56 @@
+// lib/api.ts
 import type { LotDefinition } from "./types"
-import { getAuthHeaders } from "./auth-api"
+import { auth } from "./firebase"
 
-export async function fetchCurrentLot(
-  baseUrl: string
-): Promise<LotDefinition> {
-  const res = await fetch(`${baseUrl}/api/lots/current`, {
-    headers: { ...getAuthHeaders() },
-  })
-  if (!res.ok) throw new Error(`Failed to fetch lot: ${res.statusText}`)
+/**
+ * Helper to get Firebase ID token for authenticated requests
+ */
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const user = auth.currentUser
+  if (!user) return {}
+  const token = await user.getIdToken()
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  }
+}
+
+/**
+ * Fetch current parking lot data
+ */
+export async function fetchCurrentLot(baseUrl: string): Promise<LotDefinition[]> {
+  const headers = await getAuthHeaders()
+  const res = await fetch(`${baseUrl}/lot`, { headers })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch parking lot: ${res.statusText}`)
+  }
   return res.json()
 }
 
-export async function getSignedUploadUrl(
-  baseUrl: string,
-  filename: string,
-  contentType: string
-): Promise<{ url: string; objectName: string }> {
-  const res = await fetch(`${baseUrl}/api/videos/signed-upload-url`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    body: JSON.stringify({ filename, contentType }),
-  })
-  if (!res.ok) throw new Error(`Failed to get signed URL: ${res.statusText}`)
-  return res.json()
-}
-
-export async function uploadFileToSignedUrl(
-  signedUrl: string,
-  file: File
-): Promise<void> {
-  const res = await fetch(signedUrl, {
+/**
+ * Update a specific parking lot entry
+ */
+export async function updateLot(baseUrl: string, lotId: string, data: Partial<LotDefinition>) {
+  const headers = await getAuthHeaders()
+  const res = await fetch(`${baseUrl}/lot/${lotId}`, {
     method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file,
+    headers,
+    body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`)
+  if (!res.ok) {
+    throw new Error(`Failed to update lot: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+/**
+ * Example: fetch all available lots (custom endpoint)
+ */
+export async function fetchAvailableLots(baseUrl: string): Promise<LotDefinition[]> {
+  const headers = await getAuthHeaders()
+  const res = await fetch(`${baseUrl}/lot/available`, { headers })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch available lots: ${res.statusText}`)
+  }
+  return res.json()
 }
