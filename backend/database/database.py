@@ -33,7 +33,9 @@ db = client[DATABASE_NAME]
 
 # Collections
 users_collection = db["mac-a-park-collection"]
-preferences_collection=db["preferences-collection"]
+preferences_collection = db["preferences-collection"]
+lot_collection = db["lot-collection"]
+occupancy_collection = db["occupancy-collection"]
 
 # Helper function to check database connection
 def check_db_connection():

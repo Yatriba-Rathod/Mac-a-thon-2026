@@ -50,10 +50,7 @@ export function Dashboard() {
       <DashboardSidebar
         guidanceFilter={guidanceFilter}
         onFilterChange={setGuidanceFilter}
-        selectedEntranceId={
-          selectedEntranceId ??
-          (state.lot?.entrances?.[0]?.id ?? null)
-        }
+        selectedEntranceId={selectedEntranceId ?? null}
         onEntranceChange={setSelectedEntranceId}
         guidanceResult={guidanceResult}
         onCenterOnSpot={handleCenterOnSpot}
@@ -78,12 +75,6 @@ export function Dashboard() {
           />
         </div>
       </main>
-
-      <SpotDrawer
-        spotId={selectedSpot}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-      />
     </div>
   )
 }

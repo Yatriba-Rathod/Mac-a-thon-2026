@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useParkingStore } from "@/lib/store";
 import type { SpotDefinition, Point } from "@/lib/types";
-import { DEMO_LOT, DEMO_SPOT_STATES } from "@/lib/mock-data";
 
 interface ParkingLotViewProps {
   onSpotClick: (spotId: string) => void;
@@ -30,14 +29,14 @@ function SpotPolygon({
   isRecommended: boolean;
   onClick: () => void;
 }) {
-  const points = spot.polygon
-    .map((p) => `${p.x * SVG_W},${p.y * SVG_H}`)
-    .join(" ");
-
+  // Calculate center of polygon
   const centerX =
     spot.polygon.reduce((sum, p) => sum + p.x * SVG_W, 0) / spot.polygon.length;
   const centerY =
     spot.polygon.reduce((sum, p) => sum + p.y * SVG_H, 0) / spot.polygon.length;
+
+  // Fixed square size for all spots
+  const squareSize = 60;
 
   const fillColor = isRecommended
     ? "hsl(210 90% 56% / 0.3)"
@@ -73,16 +72,24 @@ function SpotPolygon({
     >
       {/* Glow filter for recommended spot */}
       {isRecommended && (
-        <polygon
-          points={points}
+        <rect
+          x={centerX - squareSize / 2 - 4}
+          y={centerY - squareSize / 2 - 4}
+          width={squareSize + 8}
+          height={squareSize + 8}
+          rx="4"
           fill="none"
           stroke="hsl(210 90% 56% / 0.4)"
           strokeWidth="8"
           className="animate-pulse"
         />
       )}
-      <polygon
-        points={points}
+      <rect
+        x={centerX - squareSize / 2}
+        y={centerY - squareSize / 2}
+        width={squareSize}
+        height={squareSize}
+        rx="4"
         fill={fillColor}
         stroke={strokeColor}
         strokeWidth={isRecommended ? 3 : 2}
@@ -140,11 +147,8 @@ export function ParkingLotView({
 }: ParkingLotViewProps) {
   const { state } = useParkingStore();
 
-  // TODO: Remove this line to use real data from backend
-  const useDummyData = true;
-
-  const lot = useDummyData ? DEMO_LOT : state.lot;
-  const spotStates = useDummyData ? DEMO_SPOT_STATES : state.spotStates;
+  const lot = state.lot;
+  const spotStates = state.spotStates;
 
   const spots = useMemo(() => lot?.spots ?? [], [lot]);
 
@@ -206,57 +210,25 @@ export function ParkingLotView({
         </defs>
         <rect width={SVG_W} height={SVG_H} fill="url(#grid)" />
 
-        {/* Road markings */}
-        <line
-          x1="0"
-          y1="195"
-          x2={SVG_W}
-          y2="195"
-          stroke="hsl(45 90% 55% / 0.3)"
-          strokeWidth="2"
-          strokeDasharray="20 10"
-        />
-        <line
-          x1="0"
-          y1="390"
-          x2={SVG_W}
-          y2="390"
-          stroke="hsl(45 90% 55% / 0.3)"
-          strokeWidth="2"
-          strokeDasharray="20 10"
-        />
-
-        {/* Parking labels */}
-        <text
-          x="960"
-          y="100"
-          fill="hsl(215 15% 35%)"
-          fontSize="12"
-          fontFamily="var(--font-jetbrains-mono), monospace"
-          textAnchor="end"
-        >
-          ROW A
-        </text>
-        <text
-          x="960"
-          y="300"
-          fill="hsl(215 15% 35%)"
-          fontSize="12"
-          fontFamily="var(--font-jetbrains-mono), monospace"
-          textAnchor="end"
-        >
-          ROW B
-        </text>
-        <text
-          x="960"
-          y="490"
-          fill="hsl(215 15% 35%)"
-          fontSize="12"
-          fontFamily="var(--font-jetbrains-mono), monospace"
-          textAnchor="end"
-        >
-          ROW C
-        </text>
+        {/* Adjustable horizontal line - modify rotation and yIntercept values */}
+        {(() => {
+          const rotation = -6; // Change this value to rotate the line (in degrees)
+          const yIntercept = SVG_H / 2.4; // Change this to move the line up/down (0 = top, SVG_H = bottom)
+          
+          return (
+            <line
+              x1="0"
+              y1={yIntercept}
+              x2={SVG_W}
+              y2={yIntercept}
+              stroke="hsl(45 90% 55%)"
+              strokeWidth="2"
+              strokeDasharray="10 5"
+              transform={`rotate(${rotation} ${SVG_W / 2} ${yIntercept})`}
+              className="transition-all duration-300"
+            />
+          );
+        })()}
 
         {/* Spots */}
         {spots.map((spot) => {
@@ -271,21 +243,6 @@ export function ParkingLotView({
             />
           );
         })}
-
-        {/* Walking path overlay */}
-        {pathPolyline && (
-          <polyline
-            points={pathPolyline}
-            fill="none"
-            stroke="hsl(210 90% 56%)"
-            strokeWidth="3"
-            strokeDasharray="10 6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            markerEnd="url(#arrowhead)"
-            className="transition-all duration-500"
-          />
-        )}
       </svg>
     </div>
   );

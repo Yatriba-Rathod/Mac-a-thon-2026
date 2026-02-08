@@ -23,7 +23,10 @@ export interface LotDefinition {
   lot_id: string
   name: string
   spots: SpotDefinition[]
-  entrances?: Entrance[]
+  image_width?: number
+  image_height?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface SpotState {
