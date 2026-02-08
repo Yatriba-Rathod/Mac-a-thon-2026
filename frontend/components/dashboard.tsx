@@ -61,9 +61,6 @@ export function Dashboard() {
           <h1 className="text-lg font-semibold text-foreground">
             Parking Lot Model
           </h1>
-          <p className="text-xs text-muted-foreground">
-            Click a spot for details
-          </p>
         </div>
 
         <div className="flex-1 overflow-hidden">

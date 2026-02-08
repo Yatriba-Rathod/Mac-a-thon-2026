@@ -201,7 +201,7 @@ export function DashboardSidebar({
             <p className="text-center text-xs text-muted-foreground">
               {!state.lot
                 ? "No lot loaded."
-                : "No matching empty spots available."}
+                : ""}
             </p>
           </div>
         )}

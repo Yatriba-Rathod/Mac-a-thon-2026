@@ -26,13 +26,6 @@ export function AppHeader() {
         ? "bg-[hsl(45,90%,55%)]"
         : "bg-[hsl(var(--spot-occupied))]"
 
-  const connectionLabel =
-    state.connectionState === "connected"
-      ? "Connected"
-      : state.connectionState === "reconnecting"
-        ? "Reconnecting"
-        : "Disconnected"
-
   return (
     <header className="flex items-center justify-between border-b border-border bg-card px-6 py-3">
       <div className="flex items-center gap-6">
@@ -66,15 +59,6 @@ export function AppHeader() {
         </nav>
       </div>
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1">
-          <span
-            className={cn("h-2 w-2 rounded-full", connectionColor)}
-            aria-hidden="true"
-          />
-          <span className="text-xs text-muted-foreground">
-            {connectionLabel}
-          </span>
-        </div>
         {authState.status === "authenticated" && authState.user && (
           <>
             <span className="text-xs text-muted-foreground">
