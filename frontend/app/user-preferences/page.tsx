@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { AppShell } from "@/components/app-shell"
+import { onAuthStateChanged } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 
 export default function UserPreferencesPage() {
     const [q1, setQ1] = useState<string>("")
@@ -11,21 +13,71 @@ export default function UserPreferencesPage() {
     const [q4, setQ4] = useState<string>("")
     const [q5, setQ5] = useState<string[]>([])
 
-    const firebase_id = "user_123" // replace with dynamic Firebase ID if available
+    const [firebase_id, setFirebaseId] = useState<string>("")
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+    // ==================== AUTH ====================
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setFirebaseId(user.uid)
+            } else {
+                setFirebaseId("")
+                setQ1("")
+                setQ2("")
+                setQ3("")
+                setQ4("")
+                setQ5([])
+            }
+        })
+        return () => unsubscribe()
+    }, [])
+
+    // ==================== FETCH EXISTING ANSWERS (PREFILL) ====================
+    useEffect(() => {
+        if (!firebase_id) return
+
+        const fetchPreferences = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/questions/${firebase_id}`)
+                if (!res.ok) return
+
+                const data = await res.json()
+                if (data.status !== "success") return
+
+                const prefs = data.preferences
+
+                setQ1(prefs.q1 || "")
+                setQ2(prefs.q2 || "")
+                setQ3(prefs.q3 || "")
+                setQ4(prefs.q4 || "")
+                setQ5(prefs.q5 || [])
+            } catch (err) {
+                console.error("Failed to load preferences", err)
+            }
+        }
+
+        fetchPreferences()
+    }, [firebase_id, API_BASE_URL])
 
     const surveyData = { firebase_id, q1, q2, q3, q4, q5 }
 
     // ==================== API FUNCTIONS ====================
 
     const handleSubmit = async () => {
+        if (!firebase_id) {
+            alert("User not authenticated")
+            return
+        }
+
         try {
-            const res = await fetch("/api/questions/answer", {
+            const res = await fetch(`${API_BASE_URL}/questions/answer`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(surveyData),
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.detail || "Error submitting survey")
+            if (!res.ok) throw new Error(data.message || "Error submitting survey")
             alert("Survey submitted successfully!")
         } catch (err: any) {
             alert(err.message)
@@ -33,14 +85,19 @@ export default function UserPreferencesPage() {
     }
 
     const handleEdit = async () => {
+        if (!firebase_id) {
+            alert("User not authenticated")
+            return
+        }
+
         try {
-            const res = await fetch(`/api/questions/${firebase_id}`, {
+            const res = await fetch(`${API_BASE_URL}/questions/${firebase_id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ q1, q2, q3, q4, q5 }), // send only fields to update
+                body: JSON.stringify({ q1, q2, q3, q4, q5 }),
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.detail || "Error editing survey")
+            if (!res.ok) throw new Error(data.message || "Error editing survey")
             alert("Survey updated successfully!")
         } catch (err: any) {
             alert(err.message)
@@ -48,17 +105,22 @@ export default function UserPreferencesPage() {
     }
 
     const handleDelete = async () => {
+        if (!firebase_id) {
+            alert("User not authenticated")
+            return
+        }
+
         const confirmed = confirm("Are you sure you want to delete your survey answers?")
         if (!confirmed) return
 
         try {
-            const res = await fetch(`/api/questions/${firebase_id}`, {
+            const res = await fetch(`${API_BASE_URL}/questions/${firebase_id}`, {
                 method: "DELETE",
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.detail || "Error deleting survey")
+            if (!res.ok) throw new Error(data.message || "Error deleting survey")
+
             alert("Survey deleted successfully!")
-            // Reset form after deletion
             setQ1("")
             setQ2("")
             setQ3("")
@@ -183,20 +245,23 @@ export default function UserPreferencesPage() {
                     <p className="font-medium text-sm mb-2">
                         5) Do you require or strongly prefer any of the following?
                     </p>
-                    {["EV charging spot", "Accessible parking", "Wide/family spot", "No preference"].map(
-                        (option) => (
-                            <label key={option} className="flex items-center gap-2 mb-1 text-sm">
-                                <input
-                                    type="checkbox"
-                                    value={option}
-                                    checked={q5.includes(option)}
-                                    onChange={() => toggleQ5(option)}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                {option}
-                            </label>
-                        )
-                    )}
+                    {[
+                        "EV charging spot",
+                        "Accessible parking",
+                        "Wide/family spot",
+                        "No preference",
+                    ].map((option) => (
+                        <label key={option} className="flex items-center gap-2 mb-1 text-sm">
+                            <input
+                                type="checkbox"
+                                value={option}
+                                checked={q5.includes(option)}
+                                onChange={() => toggleQ5(option)}
+                                className="h-4 w-4 accent-primary"
+                            />
+                            {option}
+                        </label>
+                    ))}
                 </div>
 
                 {/* Buttons */}

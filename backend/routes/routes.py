@@ -11,7 +11,7 @@ from controller.controller import (
     default_message
 )
 from database.database import check_db_connection
-
+from model.model import UserPreferences
 router = APIRouter()
 
 #Default endpoint
@@ -46,35 +46,14 @@ def sync_user(payload: dict = Body(...)):
     return result
 # ==================== SURVEY/QUESTIONS ENDPOINTS ====================
 
-@router.post("/questions/answer", status_code=status.HTTP_201_CREATED)
-def submit_survey(payload: dict = Body(...)):
-    """
-    POST - Answer/Submit survey questions (First time)
-    
-    Saves both user info (firebase_id, full_name, email) + survey answers (q1-q5)
-    
-    Body:
-    {
-        "firebase_id": "user_123",
-        "full_name": "Sahil Gupta",
-        "email": "sahil@example.com",
-        "q1": "3–5 minutes",
-        "q2": "Evening (6pm–10pm)",
-        "q3": "Closest to entrance",
-        "q4": "3–5",
-        "q5": ["Accessible parking", "EV charging spot"]
-    }
-    """
+@router.post("/questions/answer", status_code=201)
+def submit_survey(payload: UserPreferences):
     result = answer_questions(payload)
-    
-    if result.get("status") == "error":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.get("message")
-        )
-    
-    return result
 
+    if result["status"] == "error":
+        raise HTTPException(status_code=400, detail=result["message"])
+
+    return result
 
 @router.put("/questions/{firebase_id}", status_code=status.HTTP_200_OK)
 def update_survey(firebase_id: str, payload: dict = Body(...)):
