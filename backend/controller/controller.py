@@ -67,43 +67,30 @@ def get_user(firebase_id: str):
 
 # ==================== QUESTIONS/PREFERENCES OPERATIONS ====================
 
-def answer_questions(data: dict):
+def answer_questions(data: UserPreferences):
     """
-    Answer/submit survey questions (POST)
-    Creates or updates survey answers with user info
+    Create or update user parking preferences
     """
-    firebase_id = data.get("firebase_id")
-    
-    if not firebase_id:
-        return {"status": "error", "message": "firebase_id is required"}
-    
-    # Validate required fields
-    required_fields = ["full_name", "email", "q1", "q2", "q3", "q4", "q5"]
-    for field in required_fields:
-        if field not in data or data[field] is None or data[field] == "":
-            return {"status": "error", "message": f"{field} is required"}
-    
-    # First, save/update user profile
-    user_result = create_or_update_user({
-        "firebase_id": firebase_id,
-        "full_name": data.get("full_name"),
-        "email": data.get("email")
-    })
-    
-    if user_result.get("status") == "error":
-        return user_result
-    
-    # Then save/update preferences
+
+    firebase_id = data.firebase_id
+
+    # Ensure user exists (must be synced via /user/sync)
+    if not users_collection.find_one({"firebase_id": firebase_id}):
+        return {
+            "status": "error",
+            "message": "User does not exist. Sync user first."
+        }
+
     preferences_data = {
         "firebase_id": firebase_id,
-        "q1": data.get("q1"),
-        "q2": data.get("q2"),
-        "q3": data.get("q3"),
-        "q4": data.get("q4"),
-        "q5": data.get("q5"),
+        "q1": data.q1,
+        "q2": data.q2,
+        "q3": data.q3,
+        "q4": data.q4,
+        "q5": data.q5,
         "updated_at": datetime.utcnow(),
     }
-    
+
     result = preferences_collection.update_one(
         {"firebase_id": firebase_id},
         {
@@ -112,15 +99,14 @@ def answer_questions(data: dict):
         },
         upsert=True,
     )
-    
+
     return {
         "status": "success",
-        "message": "User preference answers saved successfully",
+        "message": "Preferences saved successfully",
         "firebase_id": firebase_id,
         "upserted": result.upserted_id is not None,
-        "modified": result.modified_count > 0
+        "modified": result.modified_count > 0,
     }
-
 
 def edit_questions(firebase_id: str, data: dict):
     """
