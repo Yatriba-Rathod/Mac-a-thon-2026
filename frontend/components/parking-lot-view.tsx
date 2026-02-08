@@ -1,21 +1,22 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { useParkingStore } from "@/lib/store"
-import type { SpotDefinition, Point } from "@/lib/types"
+import { useMemo } from "react";
+import { useParkingStore } from "@/lib/store";
+import type { SpotDefinition, Point } from "@/lib/types";
+import { DEMO_LOT, DEMO_SPOT_STATES } from "@/lib/mock-data";
 
 interface ParkingLotViewProps {
-  onSpotClick: (spotId: string) => void
-  recommendedSpotId?: string | null
-  pathPoints?: Point[]
-  entrancePoint?: Point | null
+  onSpotClick: (spotId: string) => void;
+  recommendedSpotId?: string | null;
+  pathPoints?: Point[];
+  entrancePoint?: Point | null;
 }
 
-const SVG_W = 1000
-const SVG_H = 600
+const SVG_W = 1000;
+const SVG_H = 600;
 
 function toSvg(p: Point): { x: number; y: number } {
-  return { x: p.x * SVG_W, y: p.y * SVG_H }
+  return { x: p.x * SVG_W, y: p.y * SVG_H };
 }
 
 function SpotPolygon({
@@ -24,37 +25,37 @@ function SpotPolygon({
   isRecommended,
   onClick,
 }: {
-  spot: SpotDefinition
-  occupied: boolean
-  isRecommended: boolean
-  onClick: () => void
+  spot: SpotDefinition;
+  occupied: boolean;
+  isRecommended: boolean;
+  onClick: () => void;
 }) {
   const points = spot.polygon
     .map((p) => `${p.x * SVG_W},${p.y * SVG_H}`)
-    .join(" ")
+    .join(" ");
 
   const centerX =
-    spot.polygon.reduce((sum, p) => sum + p.x * SVG_W, 0) / spot.polygon.length
+    spot.polygon.reduce((sum, p) => sum + p.x * SVG_W, 0) / spot.polygon.length;
   const centerY =
-    spot.polygon.reduce((sum, p) => sum + p.y * SVG_H, 0) / spot.polygon.length
+    spot.polygon.reduce((sum, p) => sum + p.y * SVG_H, 0) / spot.polygon.length;
 
   const fillColor = isRecommended
     ? "hsl(210 90% 56% / 0.3)"
     : occupied
       ? "hsl(0 72% 51% / 0.25)"
-      : "hsl(142 60% 45% / 0.2)"
+      : "hsl(142 60% 45% / 0.2)";
 
   const strokeColor = isRecommended
     ? "hsl(210 90% 56%)"
     : occupied
       ? "hsl(0 72% 51%)"
-      : "hsl(142 60% 45%)"
+      : "hsl(142 60% 45%)";
 
   const textColor = isRecommended
     ? "hsl(210 90% 80%)"
     : occupied
       ? "hsl(0 72% 80%)"
-      : "hsl(142 60% 75%)"
+      : "hsl(142 60% 75%)";
 
   return (
     <g
@@ -65,8 +66,8 @@ function SpotPolygon({
       aria-label={`Spot ${spot.spot_id}: ${isRecommended ? "Recommended" : occupied ? "Occupied" : "Empty"}`}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onClick()
+          e.preventDefault();
+          onClick();
         }
       }}
     >
@@ -128,7 +129,7 @@ function SpotPolygon({
         {spot.spot_id}
       </text>
     </g>
-  )
+  );
 }
 
 export function ParkingLotView({
@@ -137,11 +138,17 @@ export function ParkingLotView({
   pathPoints,
   entrancePoint,
 }: ParkingLotViewProps) {
-  const { state } = useParkingStore()
+  const { state } = useParkingStore();
 
-  const spots = useMemo(() => state.lot?.spots ?? [], [state.lot])
+  // TODO: Remove this line to use real data from backend
+  const useDummyData = true;
 
-  if (!state.lot) {
+  const lot = useDummyData ? DEMO_LOT : state.lot;
+  const spotStates = useDummyData ? DEMO_SPOT_STATES : state.spotStates;
+
+  const spots = useMemo(() => lot?.spots ?? [], [lot]);
+
+  if (!lot) {
     return (
       <div className="flex h-full items-center justify-center rounded-lg border border-border bg-card p-8 text-center">
         <div>
@@ -153,17 +160,17 @@ export function ParkingLotView({
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   const pathPolyline = pathPoints
     ?.map((p) => {
-      const s = toSvg(p)
-      return `${s.x},${s.y}`
+      const s = toSvg(p);
+      return `${s.x},${s.y}`;
     })
-    .join(" ")
+    .join(" ");
 
-  const entranceSvg = entrancePoint ? toSvg(entrancePoint) : null
+  const entranceSvg = entrancePoint ? toSvg(entrancePoint) : null;
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg border border-border bg-[hsl(220,20%,5%)]">
@@ -194,36 +201,66 @@ export function ParkingLotView({
             refY="3"
             orient="auto"
           >
-            <polygon
-              points="0 0, 8 3, 0 6"
-              fill="hsl(210 90% 56%)"
-            />
+            <polygon points="0 0, 8 3, 0 6" fill="hsl(210 90% 56%)" />
           </marker>
         </defs>
         <rect width={SVG_W} height={SVG_H} fill="url(#grid)" />
 
         {/* Road markings */}
         <line
-          x1="0" y1="195" x2={SVG_W} y2="195"
+          x1="0"
+          y1="195"
+          x2={SVG_W}
+          y2="195"
           stroke="hsl(45 90% 55% / 0.3)"
           strokeWidth="2"
           strokeDasharray="20 10"
         />
         <line
-          x1="0" y1="390" x2={SVG_W} y2="390"
+          x1="0"
+          y1="390"
+          x2={SVG_W}
+          y2="390"
           stroke="hsl(45 90% 55% / 0.3)"
           strokeWidth="2"
           strokeDasharray="20 10"
         />
 
         {/* Parking labels */}
-        <text x="960" y="100" fill="hsl(215 15% 35%)" fontSize="12" fontFamily="var(--font-jetbrains-mono), monospace" textAnchor="end">ROW A</text>
-        <text x="960" y="300" fill="hsl(215 15% 35%)" fontSize="12" fontFamily="var(--font-jetbrains-mono), monospace" textAnchor="end">ROW B</text>
-        <text x="960" y="490" fill="hsl(215 15% 35%)" fontSize="12" fontFamily="var(--font-jetbrains-mono), monospace" textAnchor="end">ROW C</text>
+        <text
+          x="960"
+          y="100"
+          fill="hsl(215 15% 35%)"
+          fontSize="12"
+          fontFamily="var(--font-jetbrains-mono), monospace"
+          textAnchor="end"
+        >
+          ROW A
+        </text>
+        <text
+          x="960"
+          y="300"
+          fill="hsl(215 15% 35%)"
+          fontSize="12"
+          fontFamily="var(--font-jetbrains-mono), monospace"
+          textAnchor="end"
+        >
+          ROW B
+        </text>
+        <text
+          x="960"
+          y="490"
+          fill="hsl(215 15% 35%)"
+          fontSize="12"
+          fontFamily="var(--font-jetbrains-mono), monospace"
+          textAnchor="end"
+        >
+          ROW C
+        </text>
 
         {/* Spots */}
         {spots.map((spot) => {
-          const spotState = state.spotStates.get(spot.spot_id)
+          const spotState = spotStates.get(spot.spot_id);
           return (
             <SpotPolygon
               key={spot.spot_id}
@@ -232,7 +269,7 @@ export function ParkingLotView({
               isRecommended={spot.spot_id === recommendedSpotId}
               onClick={() => onSpotClick(spot.spot_id)}
             />
-          )
+          );
         })}
 
         {/* Walking path overlay */}
@@ -249,34 +286,7 @@ export function ParkingLotView({
             className="transition-all duration-500"
           />
         )}
-
-        {/* Entrance marker */}
-        {entranceSvg && (
-          <g>
-            <circle
-              cx={entranceSvg.x}
-              cy={entranceSvg.y}
-              r="12"
-              fill="hsl(210 90% 56% / 0.2)"
-              stroke="hsl(210 90% 56%)"
-              strokeWidth="2"
-            />
-            <text
-              x={entranceSvg.x}
-              y={entranceSvg.y + 1}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="hsl(210 90% 80%)"
-              fontSize="10"
-              fontWeight="700"
-              fontFamily="var(--font-jetbrains-mono), monospace"
-              className="pointer-events-none select-none"
-            >
-              E
-            </text>
-          </g>
-        )}
       </svg>
     </div>
-  )
+  );
 }
