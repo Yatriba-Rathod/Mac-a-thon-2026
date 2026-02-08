@@ -22,10 +22,10 @@ try:
     print(" MongoDB Connected Successfully")
     
 except ConnectionFailure as e:
-    print(f"❌ MongoDB Connection Failed: {e}")
+    print(f"MongoDB Connection Failed: {e}")
     raise
 except ServerSelectionTimeoutError as e:
-    print(f"❌ MongoDB Server Selection Timeout: {e}")
+    print(f"MongoDB Server Selection Timeout: {e}")
     raise
 
 # Database
@@ -33,6 +33,7 @@ db = client[DATABASE_NAME]
 
 # Collections
 users_collection = db["mac-a-park-collection"]
+preferences_collection=db["preferences_collection"]
 
 # Helper function to check database connection
 def check_db_connection():
