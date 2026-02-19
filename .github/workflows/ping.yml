@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping backend
-        run: curl https://mac-a-park.onrender.com/
+        run: curl https://mac-a-park-production.up.railway.app/
