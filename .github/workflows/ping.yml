@@ -1,13 +1,16 @@
 name: Keep Backend Alive
 
-on:
-  schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
+# on:
+#   schedule:
+#     - cron: '*/5 * * * *'
+#   workflow_dispatch:
 
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ping backend
-        run: curl https://mac-a-park-production.up.railway.app/
+# jobs:
+#   ping:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Ping backend
+#         run: curl https://mac-a-park-production.up.railway.app/
+
+
+        
